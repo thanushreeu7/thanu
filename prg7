@@ -1,0 +1,70 @@
+# Experiment 7: Bayesian Network using pgmpy
+
+# Step 1: Install pgmpy
+%pip install pgmpy
+
+# Step 2: Import libraries
+from pgmpy.models import DiscreteBayesianNetwork
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+
+# Step 3: Define Bayesian Network structure
+model = DiscreteBayesianNetwork([('T', 'S'), ('S', 'F')])
+
+# Step 4: Define CPD for Temperature (T)
+cpd_t = TabularCPD(
+    variable='T',
+    variable_card=2,
+    values=[[0.7], [0.3]],
+    state_names={'T': ['Normal', 'High']}
+)
+
+# Step 5: Define CPD for Sore Throat (S)
+cpd_s = TabularCPD(
+    variable='S',
+    variable_card=2,
+    values=[[0.9, 0.4], [0.1, 0.6]],
+    evidence=['T'],
+    evidence_card=[2],
+    state_names={
+        'S': ['No', 'Yes'],
+        'T': ['Normal', 'High']
+    }
+)
+
+# Step 6: Define CPD for Fever (F)
+cpd_f = TabularCPD(
+    variable='F',
+    variable_card=2,
+    values=[[0.8, 0.2], [0.2, 0.8]],
+    evidence=['S'],
+    evidence_card=[2],
+    state_names={
+        'F': ['No', 'Yes'],
+        'S': ['No', 'Yes']
+    }
+)
+
+# Step 7: Add CPDs to the model
+model.add_cpds(cpd_t, cpd_s, cpd_f)
+
+# Step 8: Verify the model
+print("Model is valid:", model.check_model())
+
+# Step 9: Perform inference
+inference = VariableElimination(model)
+
+query_result = inference.query(
+    variables=['F'],
+    evidence={'T': 'High'}
+)
+
+# Step 10: Display the result
+print("\nProbability of Fever given High Temperature:")
+print(query_result)
+
+print("\nProbability of No Fever:",
+      query_result.get_value(F='No'))
+
+print("Probability of Fever:",
+      query_result.get_value(F='Yes'))
